@@ -18,7 +18,6 @@ def find_nearest(array, value):
     idx = (np.abs(array - value)).argmin()
     return idx
 
-def defineCoords(T, X, Y = 0, Z = 0):
     """
     Creates a 10*T*(MxNxO) real space numpy array and the corresponding Fourier 
     numpy array where T is the time period and M, N, and O are the number
@@ -38,7 +37,7 @@ def defineCoords(T, X, Y = 0, Z = 0):
 
     return realSpace, fourierSpace
 
-def defineCoords2(dimensions, steps):
+def defineCoords(dimensions, steps):
     """
     Creates real space numpy array and the corresponding Fourier 
     numpy array based on physical (dimensions) X, Y, and Z dimensions, (steps) dx, dy, and dz spacial
@@ -103,64 +102,6 @@ def defineCoords2(dimensions, steps):
 
     return realCoords, fourierCoords, realSpace, fourierSpace
 
-
-def testCoords1D01(realSpace, fourierSpace, T, M):
-    """
-    Function to verify coordinate system is playing nicely in 1D
-    """
-    # Test FT of const
-    test1 = np.ones_like(realSpace)
-    FT1 = np.fft.fft(test1)
-    pwr1 = np.abs(FT1)
-    N = len(test1)
-    f = np.arange(0, N)/T
-    #plt.plot(f, pwr1) # Should be an impulse at f = 0
-    test2 = np.arange(0, len(realSpace))
-    F = 10 # Arbitraty
-    test2 = np.cos(F*test2)
-    t = np.linspace(0, 100, M*T)
-    #plt.plot(t[0:int(len(t)/10)], test2[0:int(len(t)/10)]) # Plotting M periods of cosine
-    FT2 = np.fft.fft(test2)
-    pwr2 = np.abs(FT2)
-    N = len(test2)
-    f = np.arange(0, N)/T
-    Nyquist = N/(2*T)
-    NyquistIndex =  int(f.flat[np.abs(f - Nyquist).argmin()])
-    max1 = pwr2[0:NyquistIndex].argmax()
-    max2 = pwr2[NyquistIndex:].argmax()
-    print("N = ", N)
-    print("Nyquist = ", Nyquist)
-    print("NyquistIndex = ", NyquistIndex)
-    print("f[NyquistIndex] = ", f[NyquistIndex])
-    print("Max1 = ", max1)
-    print("Max2 = ", max2)
-    print("f[max1] = ", f[max1])
-    print("f[max2] = ", f[max2])
-    print("diffFreq1= ", np.abs(f[NyquistIndex] - f[max1]))
-    print("diffFreq1= ", np.abs(f[NyquistIndex] - f[max2]))
-    plt.plot(f[:], pwr2[:])
-    
-def testCoords1D0(realSpace, fourierSpace, X, dx):
-    x = np.arange(-X/2, X/2 + dx, dx)
-    realSpace1 = 0*realSpace + 1
-    fourierSpace1 = np.fft.fft(realSpace1)
-    plt1 = np.abs(fourierSpace1)
-    N = len(realSpace)
-    f = np.linspace(0, X, N)/X
-    #f = np.arange(0, X+dx, dx)/X
-    print("X/dx = ", X/dx)
-    print("len(f) = ", len(f))
-    print("len(fourierSpace1) = ", len(fourierSpace1))
-    print("len(realSpace1) = ", len(realSpace1))
-    plt.plot(f, plt1)
-    
-    realSpace2 = np.arange(0, len(realSpace))*dx
-    realSpace2 = np.cos(2*np.pi* 2 * realSpace2) + np.cos(2*np.pi* 4 * realSpace2)
-    print(realSpace2)
-    fourierSpace2 = np.fft.fft(realSpace2)
-    plt2 = np.abs(fourierSpace2)
-    #plt.plot(x, realSpace2)
-    plt.plot(f*X, plt2)
     
 def testCoords1D(realSpace, fourierSpace, X, dx):
     """
@@ -205,9 +146,8 @@ def testCoords1D(realSpace, fourierSpace, X, dx):
     
     
     
-    
 
-rlCoords, frCoords, rlSpace, frSpace = defineCoords2([10, 5, 0], [.1, .2, 0])
+rlCoords, frCoords, rlSpace, frSpace = defineCoords([10, 5, 0], [.1, .2, 0])
 #print("xcrds:\n", xcrds, "\n\n")
 print("rlCoords:\n", rlCoords, "\n\n")
 print("rlSpace:\n", rlSpace, "\n\n")
