@@ -113,20 +113,24 @@ def testCoords1D(realSpace, fourierSpace, X, dx):
         for i in range(0, len(freqs)):
             real = real + np.cos(2*np.pi * freqs[i] * x)
             
-        fourier = np.fft.fft(real)
+        fourier = np.fft.fftshift(np.fft.fft(real))
         return real, fourier
     
     def gauss(sigma, mu, real, fourier, x): # Still need to fix
         real = 1/(sigma * np.sqrt(2 * np.pi)) * np.exp( - (x - mu)**2 / (2 * sigma**2) )
-        fourier = np.fft.fft(real)
+        fourier = np.fft.fftshift(real)
         return real, fourier
     
     def window(w, real, fourier, x):
         real = real*0 + 1
         mask = np.abs(x)-w/2 < 0
         real = real*mask
-        fourier = np.fft.fft(real)
-        return real, fourier
+        fourier = np.fft.fftshift(np.fft.fft(real))
+        #f1 = np.fft.fft(real)
+        #ifft = np.fft.ifft(np.fft.fftshift(fourier))
+        ifft = np.fft.ifft(np.fft.ifftshift(fourier))
+        
+        return real, fourier, ifft
     
     N = len(realSpace)
     xVals = np.arange(-X/2, X/2 + dx, dx)
@@ -134,17 +138,18 @@ def testCoords1D(realSpace, fourierSpace, X, dx):
     const = 0*realSpace + 1
     impulse = np.fft.fft(const)
     #plt.plot(f, impulse)
-    cosines, impulses = cosines([0.1, 2, 4], X/2, const*0, f, xVals)
-   # plt.plot(xVals, cosines)
-    #plt.plot(f*X, np.abs(impulses))
+    cosines, impulses = cosines([1], X/2, const*0, f, xVals)
+    #plt.plot(xVals, cosines)
+   # plt.plot(f*X, np.abs(impulses))
     gauss, gaussFT = gauss(1, 0, const*0, f, xVals)
-    window, sinc = window(X/2, const, f, xVals)
-    plt.plot(f[0:int(len(f)/2)], np.abs(sinc)[0:int(len(f)/2)])
-    #plt.plot(xVals, gauss)
-   # plt.plot(f, gaussFT)
+    window, sinc, iwindow = window(X/4, const, f, xVals)
+    ##plt.plot(f, np.abs(sinc))
+    plt.plot(xVals, iwindow)
+   # plt.plot(xVals, np.abs(gauss))
+    #plt.plot(f, np.abs(gaussFT))
     
     
-    
+#def diffusion(lambda, )
     
 
 rlCoords, frCoords, rlSpace, frSpace = defineCoords([10, 5, 0], [.1, .2, 0])
