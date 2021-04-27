@@ -9,6 +9,37 @@ Created on Thu Apr  8 20:23:23 2021
 import numpy as np
 import matplotlib.pyplot as plt
 
+def FFT1(real):
+    """
+    
+
+    Parameters
+    ----------
+    real : Real space 1D function
+
+    Returns
+    -------
+    shifted FFT of real: fourier space representation of the passed function. 
+        Shifted as to center the Fourier spectrum
+
+    """
+    return np.fft.fftshift(np.fft.fft(real))
+
+def IFFT1(fourier):
+    """
+    
+
+    Parameters
+    ----------
+    fourier : 1D Fourier spectrum centered in the middle of the array
+
+    Returns
+    -------
+    inverse shifted real space function: inverse shifted and IFFT'd function
+
+    """
+    return np.fft.ifft(np.fft.ifftshift(fourier))
+
 def find_nearest(array, value): 
     """
     Function from https://stackoverflow.com/questions/2566412/find-nearest-value-in-numpy-array
@@ -92,6 +123,13 @@ def defineCoords(dimensions, steps):
         
     elif Z==0 and Y==0:
         print("1D")
+        xCoords = np.arange(-X/2, X/2+dx, dx) # 1D
+        fxCoords = np.arange(0, X/dx+dx)
+        fxCoords = fxCoords - fxCoords[-1]/2 # Shift everything over
+        realCoords = xCoords
+        fourierCoords = fxCoords
+        realSpace = np.zeros(Nx+1)
+        xRealSpace = np.zeros(Nx)
         #realSpace = np.zeros(Nx) #1D
     else:
         print("3D")
@@ -125,11 +163,12 @@ def testCoords1D(realSpace, fourierSpace, X, dx):
         real = real*0 + 1
         mask = np.abs(x)-w/2 < 0
         real = real*mask
-        fourier = np.fft.fftshift(np.fft.fft(real))
+        #fourier = np.fft.fftshift(np.fft.fft(real))
+        fourier = FFT1(real)
         #f1 = np.fft.fft(real)
         #ifft = np.fft.ifft(np.fft.fftshift(fourier))
-        ifft = np.fft.ifft(np.fft.ifftshift(fourier))
-        
+        #ifft = np.fft.ifft(np.fft.ifftshift(fourier))
+        ifft = IFFT1(fourier)
         return real, fourier, ifft
     
     N = len(realSpace)
@@ -143,20 +182,73 @@ def testCoords1D(realSpace, fourierSpace, X, dx):
    # plt.plot(f*X, np.abs(impulses))
     gauss, gaussFT = gauss(1, 0, const*0, f, xVals)
     window, sinc, iwindow = window(X/4, const, f, xVals)
-    ##plt.plot(f, np.abs(sinc))
-    plt.plot(xVals, iwindow)
+    plt.plot(f - f[-1]/2, np.abs(sinc))
+    #plt.plot(xVals, iwindow)
    # plt.plot(xVals, np.abs(gauss))
     #plt.plot(f, np.abs(gaussFT))
     
     
-#def diffusion(lambda, )
+def diffusion1(species, diffusivity, t_D, f_coords, x_coords):
+    """
     
 
-rlCoords, frCoords, rlSpace, frSpace = defineCoords([10, 5, 0], [.1, .2, 0])
+    Parameters
+    ----------
+    species : Array of floats
+        Each element's value corresponds with the number of that species in 
+        that real-space coordinate
+    diffusivity : Float
+        D of the material. In µm^2/s. For my holographic material, the 
+        diffusivity is 1 µm^2/s. This is fairly low. For testing, use 10x this
+        which is arbitrarily picked
+    t_D : float
+        Diffusion time
+    f_coords : Array of floats
+        The frequency coordinate of each element
+        
+    Returns
+    -------
+    species : Array of floats
+        The species distribution after diffusion
+
+    """
+    print("len(f_coords) = ", len(f_coords))
+    print("len(species) = ", len(species))
+    print("len(f_coords) = ", len(f_coords))
+    f_c = 1/np.sqrt(diffusivity*t_D) # Characteristic spatial frequency
+    print("f_c = ", f_c)
+    H = np.exp(-np.square(np.abs(f_coords)/f_c)) # Transfer function
+    #plt.figure(1)
+    print("f_coords = ", np.fft.fftshift(f_coords))
+    print("H = ", H)
+    #plt.plot(f_coords, H)
+    #plt.plot(x_coords, species)
+    f_species = FFT1(species)
+    f_species = f_species/f_species[int(len(f_species)/2-.5)] # Gotta normalize
+        # So species at f = 0 is 1 
+    #plt.figure(2)
+    #plt.plot(f_coords, np.abs(f_species))
+    f_species = np.multiply(species, H)
+    plt.plot(f_coords, np.abs(f_species))
+    species = IFFT1(f_species)
+    #plt.plot(x_coords, species)
+    
+    return species
+    
+
+rlCoords, frCoords, rlSpace, frSpace = defineCoords([10, 0, 0], [.1, 0, 0])
 #print("xcrds:\n", xcrds, "\n\n")
 print("rlCoords:\n", rlCoords, "\n\n")
+print("len(rlCoords = ", len(rlCoords))
+rlSpace[int(len(rlCoords)/2-.5)] = 1 # Set impulse in center
+print("rlCoords:\n", rlCoords, "\n\n")
+
 print("rlSpace:\n", rlSpace, "\n\n")
-print("frSpace:\n", frSpace, "\n\n")
-testCoords1D(rlCoords[0], frCoords[0], 10, .1)
+##plt.plot(rlCoords, rlSpace)
+rlSpace = diffusion1(rlSpace, 1, 5, frCoords, rlCoords)
+##plt.plot(rlCoords, rlSpace)
+
+##print("frSpace:\n", frSpace, "\n\n")
+##testCoords1D(rlCoords[0], frCoords[0], 10, .1)
 #rlspc, frspc = defineCoords(2, 100)
 #testCoords1D(rlspc, frspc, 2, 100)
