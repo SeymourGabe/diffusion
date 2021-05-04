@@ -9,9 +9,6 @@ Created on Mon May  3 22:02:02 2021
 import numpy as np
 import matplotlib.pyplot as plt
 
-def prnt(strng):
-    print(strng)
-    
 
 def diffusion1DTransferFxn(species, D, T, fCoords, xCoords):
     #print("diffusion1D")
