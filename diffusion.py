@@ -31,7 +31,7 @@ def FFT1(real):
         Shifted as to center the Fourier spectrum
 
     """
-    return np.fft.fftshift(np.fft.fft(real))
+    return np.fft.ifftshift(np.fft.fft(real))
 
 def IFFT1(fourier):
     """
@@ -46,7 +46,7 @@ def IFFT1(fourier):
     inverse shifted real space function: inverse shifted and IFFT'd function
 
     """
-    return np.fft.ifftshift(np.fft.ifft(fourier))
+    return np.abs(np.fft.ifftshift(np.fft.ifft(fourier)))
 
 def defineCoords(dimensions, steps):
     ### NOT CURRENTLY USED
@@ -139,7 +139,7 @@ def findMiddle(inList):
     else:
         return (int(middle), int(middle-1)), (inList[int(middle)], inList[int(middle-1)])
         
-def diffusion1(species, diffusivity, t_D, f_coords, x_coords):
+def diffusion1(species, diffusivity, t_D, f_coords, x_coords, plotflg):
     """
     
 
@@ -177,7 +177,14 @@ def diffusion1(species, diffusivity, t_D, f_coords, x_coords):
     f_c = 1/np.sqrt(diffusivity*t_D) # Characteristic spatial frequency
     #print("dT = " + str(t_D) + ", f_c = " + str(f_c))
     #print("f_c = ", f_c)
-    H = np.exp(-np.square(np.abs(f_coords)/f_c)) # Transfer function
+    H = np.exp(-np.square(np.abs(f_coords*len(f_coords))/f_c)) # Transfer function
+    if plotflg:
+        plt.figure(95)
+        plt.plot(f_coords, np.fft.fftshift(H), label = 't_D = ' + str(t_D))
+        plt.title("H plots")
+        plt.legend(loc=2, prop={'size': 6})
+        #plt.legend()
+        
     Hmax = max(range(len(H)), key=H.__getitem__)
     """
     Hmax = max(range(len(H)), key=H.__getitem__)
@@ -200,6 +207,7 @@ def diffusion1(species, diffusivity, t_D, f_coords, x_coords):
     #print("H = ", H)
     #plt.plot(x_coords, species)
     f_species = FFT1(species)
+    #f_species = np.fft.fft(species)
     
     # plt.figure(70)
     # plt.plot(f_coords, np.abs(f_species), label = 'max = ' + str(max(f_species)) + '\nf_species[Hmax_index] = ' + str(f_species[Hmax]))
@@ -208,11 +216,11 @@ def diffusion1(species, diffusivity, t_D, f_coords, x_coords):
     # plt.title('f_species before norm')
     # plt.legend()
     
-    f_species = f_species/f_species[int(len(f_species)/2-.5)] # Gotta normalize
+    #f_species = f_species/f_species[int(len(f_species)/2-.5)] # Gotta normalize
         # So species at f = 0 is 1 
     f_species1 = f_species.copy()
     #plt.figure(2)
-    f_species = np.multiply(np.abs(f_species), H)
+    f_species = np.multiply(f_species, H)
     f_species = f_species/f_species[int(len(f_species)/2-.5)] # Gotta normalize
     f_species2 = f_species.copy()
     
@@ -223,31 +231,32 @@ def diffusion1(species, diffusivity, t_D, f_coords, x_coords):
     # plt.title('f_species * H')
     # plt.legend()
     
-    fSpeciesMax = max(range(len(f_species)), key=f_species.__getitem__)
+    #fSpeciesMax = max(range(len(f_species)), key=f_species.__getitem__)
     #print("f_species max index= ", fSpeciesMax)
-    f_speciesval = f_species[fSpeciesMax]
+    #f_speciesval = f_species[fSpeciesMax]
     #print("f_species value= ", f_speciesval)
     #print("f_coords[fSpeciesMaxindex] = ", f_coords[fSpeciesMax])
-    fS1 = f_species[:fSpeciesMax + 1]
-    fS2 = np.flip(f_species[fSpeciesMax:int(len(f_species))])
-    fStest = fS1 - fS2
+    #fS1 = f_species[:fSpeciesMax + 1]
+    #fS2 = np.flip(f_species[fSpeciesMax:int(len(f_species))])
+    #fStest = fS1 - fS2
     #print("max fStest = ", max(fStest))
     #print("f_species*H[middle - 1] = ", str(f_species[fSpeciesMax - 1]))
     #print("f_species*H[middle + 1] = ", str(f_species[fSpeciesMax + 1]))
     
     #plt.plot(f_coords, np.abs(f_species))
-    #species = IFFT1(np.abs(f_species))
-    species = np.fft.ifftshift(np.fft.ifft(f_species))
+    species = np.fft.ifftshift(IFFT1(f_species))
+    #species = np.fft.ifftshift(np.fft.ifft(np.abs(f_species)))
+    #species = np.fft.ifftshift(np.fft.ifft(f_species))
     ### !!! ADDING A BANDAID FOR NOW
     species = np.roll(species, -1)
-    speciesMax = max(range(len(species)), key=species.__getitem__)
+    #speciesMax = max(range(len(species)), key=species.__getitem__)
     #print("species max index= ", speciesMax)
-    speciesval = species[speciesMax]
+    #speciesval = species[speciesMax]
     #print("species value= ", speciesval)
     #print("x_coords[speciesMaxindex] = ", x_coords[speciesMax])
-    S1 = species[:speciesMax + 1]
-    S2 = np.flip(species[speciesMax:int(len(species))])
-    Stest = S1 - S2
+    #S1 = species[:speciesMax + 1]
+    #S2 = np.flip(species[speciesMax:int(len(species))])
+    #Stest = S1 - S2
     #print("max Stest = ", max(Stest))
     #print("IFFT{species*H[middle - 1]} = ", str(species[speciesMax - 1]))
     #print("IFFT{species*H[middle + 1]} = ", str(species[speciesMax + 1]))
@@ -361,8 +370,8 @@ def rxn1(species, I, dTau, xCoords, i):
 # ---------- Contants ----------
 X = 1 # In ums
 Nx = 1000 # Number of x steps. Somewhat arbitrary. Choosing so spacing is about 1 µm
-D = 10 # In µm/s (for 1D)
-t_D = 1000 # Diffusion time in seconds
+D = 1 # In µm/s (for 1D)
+t_D = .001 # Diffusion time in seconds
 
 # ---------- Define coordinates in real and fourier space ----------
 dx = X/Nx # size of each step in ums
@@ -426,23 +435,23 @@ plt.legend(loc=2, prop={'size': 7})
 
 # ----- For testing reaction with an intensity impulse distribution
 species = np.zeros_like(xCoords)
-# w = 1 # in µm. Width of the window
-# species = species + 1
-# windowMask = np.abs(xCoords)- w/2 < 0
-# species = species*windowMask
-species[int(len(species)/2-.5)] = 1
+w = .1 # in µm. Width of the window
+species = species + 1
+windowMask = np.abs(xCoords)- w/2 < 0
+species = species*windowMask
+#species[int(len(species)/2-.5)] = 1
 intensity = species.copy()
-species = species
-# plt.figure(1)
-# plt.plot(xCoords, np.abs(species))
-# plt.title('Initial species')
-# plt.axis((-.1, .1, 0, 1))
+#species = species
+plt.figure(1)
+plt.plot(xCoords, np.abs(species))
+plt.title('Initial species')
+#plt.axis((-.1, .1, 0, 1))
 
 # plt.figure(2)
 # plt.plot(xCoords, intensity)
 # plt.title('Intensity distribution')
 # plt.axis((-.1, .1, 0, 1))
-steps = 10001
+steps = 100001
 #specsDiff = np.zeros((len(species), steps))
 #specsRxn = np.zeros((len(species), steps))
 #specsDiff[:, 0] = species.copy()
@@ -450,7 +459,10 @@ steps = 10001
 
 pltStep = int(steps/10)
 dt = t_D/steps
+plotflag = 0
+
 for i in range(1, steps + 1):
+    plotflag = 0
     dTau = t_D/steps
     dTau = dt
     #idt = t_D/(steps - i)
@@ -460,25 +472,29 @@ for i in range(1, steps + 1):
     
     num = i + 20
     #print("num = ", num)
-    if i % pltStep == 0 or i == 1:
-        plt.figure()
+    if i % pltStep == 0 or i == 1 or i == steps:
+        plotflag = 1
+       
         
-    species = diffusion1(np.abs(species), D, idt, fxCoords, xCoords)
+    species = np.abs(diffusion1(species, D, idt, fxCoords, xCoords, plotflag))
     #specsDiff[:, i] = species.copy()
-    if i % pltStep == 0 or i == 1:
-        plt.plot(xCoords, np.abs(species), label = 'diffusion')
+    if i % pltStep == 0 or i == 1 or i == steps:
+        plt.figure()
+        plt.plot(xCoords, species, label = 'diffusion ' + str(i))
         plt.legend()
-    species = rxn1(np.abs(species), intensity, dTau, xCoords ,i)
-    #specsRxn[:, i] = species.copy()
-    if i % pltStep == 0 or i == 1:
-        plt.plot(xCoords, np.abs(species), label = 'reaction')
         
-    if i % pltStep == 0 or i == 1:
+    species = np.abs(rxn1(np.abs(species), intensity, dTau, xCoords ,i))
+
+    #specsRxn[:, i] = species.copy()
+    #if i % pltStep == 0 or i == 1 or i == steps:
+        #plt.plot(xCoords, np.abs(species), label = 'reaction')
+        
+    if i % pltStep == 0 or i == 1 or i == steps:
         plt.title('Steps = ' + str(i) + ', t = ' + str(idt))
         x1, x2, y1, y2 = plt.axis()
-        plt.axis((-0.1, 0.1, 0, 1))
+        #plt.axis((-0.1, 0.1, 0, y2))
         plt.legend()
-    
+
     
 
 #species = diffusion1(species, D, t_D, fxCoords, xCoords)
@@ -490,3 +506,82 @@ for i in range(1, steps + 1):
 #     species = diffusion1(species, D, idt, fxCoords, xCoords)
 #     species = species/species[int(len(species)/2-.5)] # Gotta normalize
 #     plt.plot(xCoords, np.abs(species)) # Plot the species profile. Should be an impulse in the middle for now
+
+
+
+"""
+shift = np.fft.fftshift(species)
+
+plt.figure()
+plt.plot(xCoords, shift)
+plt.title("shift")
+
+
+Fshift = np.fft.fft(shift)
+
+plt.figure()
+Fshift = Fshift
+plt.plot(fxCoords, Fshift)
+plt.title("Fshift")
+
+plt.figure()
+Fspecies = np.fft.fft(species)
+plt.plot(fxCoords, Fspecies)
+plt.title("Fspecies")
+
+plt.figure()
+IFshift =  np.fft.ifftshift(Fspecies)
+plt.plot(fxCoords, IFshift)
+plt.title("IFshift")
+
+plt.figure()
+IFFT_IFshift = np.abs(np.fft.ifft(IFshift))
+plt.plot(xCoords, IFFT_IFshift)
+plt.title("IFFT of IFshift")
+
+plt.figure()
+IFshift_IIFT_IFshift = np.fft.ifftshift(IFFT_IFshift)
+plt.plot(xCoords, IFshift_IIFT_IFshift)
+plt.title("IFshift of the IFFT of IFshift")
+
+f1 = np.fft.fft(species)
+f2 = np.fft.ifftshift(f1)
+f3 = np.fft.ifft(f2)
+f4 = np.abs(f3)
+f5 = np.fft.ifftshift(f4)
+
+plt.figure()
+plt.plot(xCoords, species)
+plt.title("species")
+
+plt.figure()
+plt.plot(fxCoords, f1)
+plt.title("fft of species")
+
+plt.figure()
+plt.plot(fxCoords, f2)
+plt.title("IFFT shift of fft of species")
+
+plt.figure()
+plt.plot(fxCoords, f3)
+plt.title("ifft of IFFT shift of fft of species")
+
+plt.figure()
+plt.plot(xCoords, f4)
+plt.title("abs of IFFT shift of fft of species")
+
+plt.figure()
+plt.plot(xCoords, f5)
+plt.title("reconstructed")
+"""
+
+#%%
+
+test = np.zeros_like(xCoords)
+test = np.cos(2*np.pi*20*xCoords)
+plt.plot(xCoords, test)
+
+fTest = np.fft.fftshift(np.fft.fft(test))
+plt.plot(fxCoords*len(fTest), fTest)
+x1, x2, y1, y2 = plt.axis()
+plt.axis((-50, 50, 0, y2))
