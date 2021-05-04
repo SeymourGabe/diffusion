@@ -31,7 +31,7 @@ def FFT1(real):
         Shifted as to center the Fourier spectrum
 
     """
-    return np.fft.ifftshift(np.fft.fft(real))
+    return np.fft.fftshift(np.fft.fft(real))
 
 def IFFT1(fourier):
     """
@@ -46,7 +46,7 @@ def IFFT1(fourier):
     inverse shifted real space function: inverse shifted and IFFT'd function
 
     """
-    return np.abs(np.fft.ifftshift(np.fft.ifft(fourier)))
+    return np.abs(np.fft.fftshift(np.fft.ifft(fourier)))
 
 def defineCoords(dimensions, steps):
     ### NOT CURRENTLY USED
@@ -248,7 +248,7 @@ def diffusion1(species, diffusivity, t_D, f_coords, x_coords, plotflg):
     #species = np.fft.ifftshift(np.fft.ifft(np.abs(f_species)))
     #species = np.fft.ifftshift(np.fft.ifft(f_species))
     ### !!! ADDING A BANDAID FOR NOW
-    species = np.roll(species, -1)
+    #species = np.roll(species, -1)
     #speciesMax = max(range(len(species)), key=species.__getitem__)
     #print("species max index= ", speciesMax)
     #speciesval = species[speciesMax]
@@ -370,8 +370,8 @@ def rxn1(species, I, dTau, xCoords, i):
 # ---------- Contants ----------
 X = 1 # In ums
 Nx = 1000 # Number of x steps. Somewhat arbitrary. Choosing so spacing is about 1 µm
-D = 1 # In µm/s (for 1D)
-t_D = .001 # Diffusion time in seconds
+D = .1 # In µm/s (for 1D)
+t_D = .01 # Diffusion time in seconds
 
 # ---------- Define coordinates in real and fourier space ----------
 dx = X/Nx # size of each step in ums
@@ -435,7 +435,7 @@ plt.legend(loc=2, prop={'size': 7})
 
 # ----- For testing reaction with an intensity impulse distribution
 species = np.zeros_like(xCoords)
-w = .1 # in µm. Width of the window
+w = 2*.2 # in µm. Width of the window
 species = species + 1
 windowMask = np.abs(xCoords)- w/2 < 0
 species = species*windowMask
@@ -451,7 +451,7 @@ plt.title('Initial species')
 # plt.plot(xCoords, intensity)
 # plt.title('Intensity distribution')
 # plt.axis((-.1, .1, 0, 1))
-steps = 100001
+steps = 1000
 #specsDiff = np.zeros((len(species), steps))
 #specsRxn = np.zeros((len(species), steps))
 #specsDiff[:, 0] = species.copy()
@@ -467,7 +467,7 @@ for i in range(1, steps + 1):
     dTau = dt
     #idt = t_D/(steps - i)
     idt = dt*i
-    if i % 10000 == 0 or i >= (steps - pltStep) or i == 1:
+    if i % 100 == 0 or i >= (steps - pltStep) or i == 1:
         print("i = ", i, "\t ", steps-i, " steps to go \t t = ", idt)
     
     num = i + 20
