@@ -19,14 +19,14 @@ import warnings
 warnings.filterwarnings('ignore')
 #%% ---------- Define constants and coordinates ----------
 twoDflag = 0
-X = 10 # In ums
+X = 1 # In ums
 Nx = 10000 # Number of x steps. Somewhat arbitrary. Choosing so spacing is about 1 µm
 Y = 10 # In ums
 Ny = 10000 # Number of y steps. Somewhat arbitrary. Choosing so spacing is about 1 µm
 D = .01 # In µm/s (for 1D)
-T = 1 # Diffusion time in seconds
+T = .01 # Diffusion time in seconds
 pltSteps = 15 # Number of plots 
-tSteps = 1000 # Number of time steps between plots. Total timesteps are
+tSteps = 10000 # Number of time steps between plots. Total timesteps are
     # pltSteps*tSteps. Total time is T*pltSteps
 
 # ----- Define coordinates in real and fourier space -----
@@ -190,7 +190,7 @@ dF.prnt("test")
 I = species1D.copy()
 
 plt.figure(21)
-species1D = np.roll(species1D, -500)
+#species1D = np.roll(species1D, -500)
 plt.plot(xCoords, species1D/max(species1D), label = 'Normed species at t = 0')
 plt.title("Normed species at t = 0")
 Tstep = T/(pltSteps)
@@ -198,13 +198,15 @@ Tstep = T/(pltSteps)
 for i in range(1, pltSteps + 1):
     print("i = ", i)
     species1D = dF.timeSim1D(species1D, I, D, Tstep*(i-1), Tstep*i, tSteps, xCoords, fxCoords)
-    plt.figure()
-    plt.plot(xCoords, np.abs(species1D), label = 'Species at t = ' + str(i*Tstep) + "\nmax = " + str(max(species1D)))
-    plt.plot(xCoords, (np.abs(species1D)- min(species1D))/(max(species1D) - min(species1D)), label = 'Rescaled species with range ' + str(max(species1D) - min(species1D)))
+    #plt.figure()
+    #plt.plot(xCoords, np.abs(species1D), label = 'Species at t = ' + str(i*Tstep) + "\nmax = " + str(max(species1D)))
+    plt.plot(xCoords, np.abs(species1D), label = 'Species at t = ' + str(i*Tstep))
+    #plt.plot(xCoords, (np.abs(species1D)- min(species1D))/(max(species1D) - min(species1D)), label = 'Rescaled species with range ' + str(max(species1D) - min(species1D)))
     plt.title("Species distribution for " + str(pltSteps) + " iterations of " + str(tSteps) + " steps", y = 1.08)
     x1, x2, y1, y2 = plt.axis()
+    plt.legend(loc=2, prop={'size': 6})
     #plt.axis((x1, x2, 0, max(species1D) + .01))
-    plt.legend()
+    #plt.legend()
     
 #%% ---------- Testing offcenter distributions
 
@@ -251,3 +253,60 @@ for i in range(1, pltSteps + 1):
 # plt.plot(xCoords, species, label = 'postrxn')
 # plt.title("species distribution")
 # plt.legend()
+
+#%% ---------- Testing diffusion
+species1D = np.zeros_like(xCoords)
+
+# --- Two windows centered around middle ---
+
+species1D = np.zeros_like(xCoords)
+window1D = 2*.05
+shift1D = .175
+speciesWindow1D = species1D.copy() + 1
+twoWindowMask01D = np.abs(xCoords) - (window1D/2 + shift1D) < 0
+twoWindowMask11D = np.abs(xCoords) > shift1D
+twoWindowMask1D = np.logical_and(twoWindowMask01D, twoWindowMask11D)
+speciesWindow1D = speciesWindow1D*twoWindowMask1D
+species1D = speciesWindow1D
+plt.figure()
+plt.plot(xCoords, species1D, label = 'Species at t = 0')
+T = .01
+Nstep1 = 1
+Nstep2 = 100
+
+dT1 = T/Nstep1
+dT2 = T/Nstep2
+for i in range(1, Nstep1+1):
+    species1D, _ = dF.diffusion1DPDE(species1D, D, dT1*i, xCoords)
+    if i:
+        print("i = ", i)
+        plt.plot(xCoords, species1D, label='i = ' + str(i))
+        
+plt.title("Nstep1 = " + str(Nstep1))
+x1, x2, y1, y2 = plt.axis()
+plt.axis((.1, .3, 0, 1.1))
+plt.legend()
+
+
+species1D = np.zeros_like(xCoords)
+window1D = 2*.05
+shift1D = .175
+speciesWindow1D = species1D.copy() + 1
+twoWindowMask01D = np.abs(xCoords) - (window1D/2 + shift1D) < 0
+twoWindowMask11D = np.abs(xCoords) > shift1D
+twoWindowMask1D = np.logical_and(twoWindowMask01D, twoWindowMask11D)
+speciesWindow1D = speciesWindow1D*twoWindowMask1D
+species1D = speciesWindow1D
+plt.figure()
+plt.plot(xCoords, species1D, label = 'Species at t = 0')
+
+for i in range(1, Nstep2+1):
+    species1D, _ = dF.diffusion1DPDE(species1D, D, dT2*i, xCoords)
+    if i % 10 == 0:
+        print("i = ", i)
+        plt.plot(xCoords, species1D, label='i = ' + str(i))
+        
+plt.title("Nstep2 = " + str(Nstep2))
+x1, x2, y1, y2 = plt.axis()
+plt.axis((.1, .3, .4, 1.1))
+plt.legend()
