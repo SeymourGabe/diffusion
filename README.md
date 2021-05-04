@@ -1,3 +1,5 @@
+
+
 # Diffusion and Reaction of a Species in a Diffuse Material
 This repo consists of a python module developed in Phys 5070 at CU Boulder during the Spring 2021 semester. This module simulates the distribution of a species given arbitrary, spatially invariant diffusivities and arbitrary, spatially varying initial species concentrations for a specified time.
 
@@ -92,7 +94,6 @@ Sol'n: [r(t)] = k_I/k_t * I + exp{-k_t * t}*C. Solving for C gives C = [r(t)] - 
     species : Array of floats
         A 1D array describing the distribution of species
 
-    """
  
 ### timeSim1D(species, I, D, T0, T, steps, xCoords, fCoords):
 This function simulates the diffusion, termination, and generation of radicals in a material of given spatially and temporally invariant diffusivity, D, over a total time period, T - T0, with an initial starting time of T0 for a specified amount of steps given an initial species distribution and a constant intensity distribution. In essence, this function 
@@ -125,4 +126,3 @@ This function simulates the diffusion, termination, and generation of radicals i
     species : Array of floats
         A 1D array describing the distribution of species
 
-    """
