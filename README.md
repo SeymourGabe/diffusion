@@ -17,3 +17,32 @@ A simple way to conceptualize the printing process is that in one local spot of 
 
 ## Motivation
 One of our collaborators prints into materials much less viscous than ours (their diffusivity is higher). When they try to print something with sharp edges in this material, they get blobby edges. To fix this, they go into their CAD software and cut away some of the sharp region to "deblob." They then print the new model and see if they're close to the desired geometry. As you can imagine, this is a slow, iterative process. In upcoming work my group is doing, we will need some sort of approach to account for diffusion in order to achieve higher fidelity prints. Adding a module to model the diffusion of radicals is debatably the best way to do this. This can also be added to an algorithm  (recently submitted for publication by someone in my lab) which iteratively changes the model to achieve better prints. If done right, this project may lead to a minor publication (likely after changing the code to fit in our current algorithm after the class is over). 
+
+## Functions
+Surprisingly, there are just four functions used in my code. At this point, I have only implemented this in 1D. Unfortunately, my initial approach to finding the diffusion of a time step didn't pan out, though it is significantly less computationally expensive for large arrays than what I've implemented.
+### diffusion1DTransferFxn(species, D, T, fCoords, xCoords):
+This function takes the Fourier transform of the species array, multiplies
+    it element-wise by the transfer function of Fick's second law, 
+    H = exp{ -( |f| / f_c )^2 } where the characteristic frequency is 
+    f_c = 1 / sqrt(D * T) where D is the diffusivity of the material and T
+    is the time from the start of diffusion till present 
+
+    Parameters
+    ----------
+    species : Array of floats
+        A 1D array describing the distribution of species
+    T : Float
+        The time from the start of diffusion till present
+    fCoords : Array of floats
+        A 1D array where each element's value corresponds to the corresponding
+            frequency coordinate of that element. If len(fCoords) is odd, then 
+            fCoords[int(len(fCoords) - 0.5)] == 0
+    xCoords : Array of floats
+        A 1D array where each element's value corresponds to the corresponding
+            real-space coordinate of that element. If len(xCoords) is odd, then 
+            xCoords[int(len(xCoords) - 0.5)] == 0
+
+    Returns
+    -------
+    species : Array of floats
+        A 1D array describing the distribution of species
