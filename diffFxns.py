@@ -13,7 +13,7 @@ def prnt(strng):
     print(strng)
     
 
-def diffusion1D(species, D, T, fCoords, xCoords):
+def diffusion1DTransferFxn(species, D, T, fCoords, xCoords):
     #print("diffusion1D")
     # ----- Testing control panel -----
     pltH = 0
@@ -49,9 +49,11 @@ def diffusion1D(species, D, T, fCoords, xCoords):
     """
     
     f_c = 1/np.sqrt(D*T) # Define characteristic frequency
-    H = np.exp(-np.square(np.abs(fCoords/f_c))) # Define transfer fxn
+    #H = np.exp(-np.square(np.abs(fCoords/(f_c*max(fCoords))))) # Define transfer fxn
+    H = np.exp(-np.square(np.abs(fCoords/(f_c)))) # Define transfer fxn
     
     fSpecies = np.fft.fftshift(np.fft.fft(species)) # FFT of species array
+    #fSpecies = fSpecies/fSpecies[int(len(fSpecies)/2 - 0.5)]
         # YOU MUST USE FFTSHIFT! This centers fSpecies so the f=0 component
         # is in the middle of the 
     Hshift = np.fft.fftshift(H)
@@ -59,6 +61,10 @@ def diffusion1D(species, D, T, fCoords, xCoords):
         # a species array flip when the array isn't symmetric
     # --- Need to normalize so the f = 0 component == 1. Doing shifting because 
         # --- I'm confused otherwise. Norming conserves mass ---
+    if fCoords[int(len(fSpeciesH)/2 - 0.5)] != 0:
+        print("AHHHHHHH SOMETHING IS WRONG")
+        print("\t fCoords[int(len(fSpeciesH)/2 - 0.5)] = ", fCoords[int(len(fSpeciesH)/2 - 0.5)])
+    
     fSpeciesH = fSpeciesH/fSpeciesH[int(len(fSpeciesH)/2 - 0.5)]
 
     # --- 
@@ -89,6 +95,58 @@ def diffusion1D(species, D, T, fCoords, xCoords):
         plt.legend()
         
     return speciesDiff
+
+#%%
+def diffusion1DPDE(species, D, dt, xCoords):
+    """
+    Well, I'm not having luck implementing the transfer function diffusion fxn. 
+    So, now I'm trying the PDE solution like we discussed in class. Fick's second law
+    is du/dt = D * d^2*u/dx^2 + F where u is the species concentration, D
+    is the diffusivity, and F is a forcing function. The forcing function
+    takes into account termination and generation of species. IF WE CAN DECOUPLE
+    the diffusion and reaction steps (which I believe we can for small enough dt), 
+    then du/dt = D * d^2*u/dx^2 is the diffusion term. This has the same form 
+    as the heat equation. This has time step soln
+    u(x, t + dt) = u(x, t) + eta * [u(x + dx, t) + u(x - dx, t) - 2 * u(x,t)]
+    where eta = D*dt/(dx^2)
+
+    Parameters
+    ----------
+    species : Array of floats
+        A 1D array describing the distribution of species
+    D : float
+        Diffusivity of the material in µm^/s (for 3D case)
+    dt : float
+        Time step size
+    xCoords : Array of floats
+        A 1D array where each element's value corresponds to the corresponding
+            real-space coordinate of that element. If len(xCoords) is odd, then 
+            xCoords[int(len(xCoords) - 0.5)] == 0
+
+    Returns
+    -------
+    species : Array of floats
+        A 1D array describing the distribution of species
+
+    """
+    dx = np.abs(xCoords[0] - xCoords[1])
+    eta = D*dt/(dx**2)
+
+    # ========== Add in some padding on the end ==========
+    #speciesArr = np.insert(species, 0, 0)
+    #speciesArr = np.insert(speciesArr, len(speciesArr), 0)
+    speciesArr = species.copy()
+    valsAdd = np.zeros_like(speciesArr)
+
+    for j in range(1, len(speciesArr) - 1):
+        valsAdd[j] = speciesArr[j + 1] + speciesArr[j - 1] - 2*speciesArr[j]
+        
+    speciesArr = speciesArr + eta*valsAdd
+    species = speciesArr
+    return species
+
+
+#%%
 
 def reaction1D(species, I, dt, xCoords):
     pltSpeciesFlg = 0
@@ -127,7 +185,7 @@ def reaction1D(species, I, dt, xCoords):
     # Arbitrarily chosen constants. I know that as t -> inf, r(inf) -> k_I/k_T*I
     # So I'm setting k_I/k_t < 1 to see a noticable reaction change
     k_I = .1
-    k_t = 1 # NOTE: The time constant is tau = 1/k_t
+    k_t = 100 # NOTE: The time constant is tau = 1/k_t
     # ----------
     
     speciesRxn = k_I/k_t * I * (1 - np.exp(-k_t * dt)) + species * np.exp(-k_t * dt)
@@ -144,6 +202,7 @@ def reaction1D(species, I, dt, xCoords):
     return speciesRxn
 
 def timeSim1D(species, I, D, T0, T, steps, xCoords, fCoords):
+    print("in timeStim1D")
     """
     This function simulates the diffusion, termination, and generation of 
     radicals in a material of diffusivity, D, over a total time period, T, for 
@@ -179,16 +238,18 @@ def timeSim1D(species, I, D, T0, T, steps, xCoords, fCoords):
         A 1D array describing the distribution of species
 
     """
-    dt = T/steps
+    dt = (T - T0)/steps
     for i in range(1, steps + 1):
-        if i*10 % steps == 0:
+        if i*1000 % steps == 0:
             print("\tstep = ", i)
+            
         """
         Each step of the for loop first simulates the diffusion, and then 
         simulates the generation and termination times
         """
-        dT = dt * i # Total sim time for ith step
-        species = diffusion1D(species, D, dT, fCoords, xCoords)
+        dT = dt * i + T0# Total sim time for ith step
+        # species = diffusion1DTransferFxn(species, D, dT, fCoords, xCoords)
+        species = diffusion1DPDE(species, D, dt, xCoords) 
         species = reaction1D(species, I, dt, xCoords)
     
     return species
