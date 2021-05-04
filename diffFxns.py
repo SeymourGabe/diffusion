@@ -16,9 +16,9 @@ def prnt(strng):
 def diffusion1D(species, D, T, fCoords, xCoords):
     #print("diffusion1D")
     # ----- Testing control panel -----
-    pltH = 1
-    pltFspecies = 1
-    pltSpecies = 1
+    pltH = 0
+    pltFspecies = 0
+    pltSpecies = 0
     """
     This function takes the Fourier transform of the species array, multiplies
     it element-wise by the transfer function of Fick's second law, 
@@ -55,7 +55,8 @@ def diffusion1D(species, D, T, fCoords, xCoords):
         # YOU MUST USE FFTSHIFT! This centers fSpecies so the f=0 component
         # is in the middle of the 
     Hshift = np.fft.fftshift(H)
-    fSpeciesH = np.multiply(fSpecies, H)
+    fSpeciesH = np.flip(np.multiply(fSpecies, H)) # Adding the flip fixes 
+        # a species array flip when the array isn't symmetric
     # --- Need to normalize so the f = 0 component == 1. Doing shifting because 
         # --- I'm confused otherwise. Norming conserves mass ---
     fSpeciesH = fSpeciesH/fSpeciesH[int(len(fSpeciesH)/2 - 0.5)]
@@ -87,10 +88,10 @@ def diffusion1D(species, D, T, fCoords, xCoords):
         plt.title("Species for T = " + str(T))
         plt.legend()
         
-    return np.flip(speciesDiff)
+    return speciesDiff
 
 def reaction1D(species, I, dt, xCoords):
-    pltSpeciesFlg = 1
+    pltSpeciesFlg = 0
     """
     This function finds the species distribution after one time step with 
     unimolecular termination occuring.

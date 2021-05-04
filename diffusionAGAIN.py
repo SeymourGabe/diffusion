@@ -9,14 +9,17 @@ Created on Mon May  3 21:27:57 2021
 import numpy as np
 import matplotlib.pyplot as plt
 import diffFxns as dF
-
+import warnings
+warnings.filterwarnings('ignore')
 #%% ---------- Define constants and coordinates ----------
 
 X = 1 # In ums
 Nx = 1000 # Number of x steps. Somewhat arbitrary. Choosing so spacing is about 1 µm
 D = .01 # In µm/s (for 1D)
-T = 1 # Diffusion time in seconds
-tSteps = 100000
+T = .15 # Diffusion time in seconds
+pltSteps = 15 # Number of plots 
+tSteps = 100000 # Number of time steps between plots. Total timesteps are
+    # pltSteps*tSteps. Total time is T*pltSteps
 
 # ----- Define coordinates in real and fourier space -----
 dx = X/Nx # size of each step in ums
@@ -35,12 +38,25 @@ speciesImpulse = species.copy()
 speciesImpulse[int(len(species)/2-.5)] = 1
 
 # --- For a window centered in the vial ---
-window = 2*.2
+window = 2*.1
 speciesWindow = species.copy() + 1
 windowMask = np.abs(xCoords) - window/2 < 0
 speciesWindow = speciesWindow*windowMask
-speciesWindow = np.roll(speciesWindow, 100)
+speciesWindow = np.roll(speciesWindow, -1)
 species = speciesWindow
+
+# --- Two windows centered around middle ---
+species = np.zeros_like(xCoords)
+window = 2*.05
+shift = .175
+speciesWindow = species.copy() + 1
+twoWindowMask0 = np.abs(xCoords) - (window/2 + shift) < 0
+twoWindowMask1 = np.abs(xCoords) > shift
+twoWindowMask = np.logical_and(twoWindowMask0, twoWindowMask1)
+speciesWindow = speciesWindow*twoWindowMask
+#speciesWindow = np.roll(speciesWindow, -1)
+species = speciesWindow
+
 #%% ---------- Test fourier transforms ----------
 
 fourierTestFlag = 0
@@ -108,41 +124,63 @@ if fourierTestFlag:
     plt.legend()
     
 #%% ---------- Test diffFxns.py ---------
-# dF.prnt("test")
-# I = species.copy()
+dF.prnt("test")
+I = species.copy()
 
-# plt.figure(21)
-# plt.plot(xCoords, species/max(species), label = 'Normed species at t = 0')
-# pltSteps = 11
-# Tstep = T/(pltSteps - 1)
-# for i in range(1, pltSteps):
-#     print("i = ", i)
-#     species = dF.timeSim1D(species, I, D, Tstep*(i-1), Tstep*i, tSteps, xCoords, fxCoords)
-#     plt.figure()
-#     plt.plot(xCoords, species/max(species), label = 'Normed species at t = ' + str(i*Tstep))
-#     plt.title("Normalized species distribution for " + str(pltSteps - 1) + " iterations of " + str(tSteps) + " steps")
-#     plt.legend()
+plt.figure(21)
+plt.plot(xCoords, species/max(species), label = 'Normed species at t = 0')
+plt.title("Normed species at t = 0")
+Tstep = T/(pltSteps)
+for i in range(1, pltSteps + 1):
+    print("i = ", i)
+    species = dF.timeSim1D(species, I, D, Tstep*(i-1), Tstep*i, tSteps, xCoords, fxCoords)
+    plt.figure()
+    plt.plot(xCoords, species, label = 'Normed species at t = ' + str(i*Tstep))
+    plt.title("Normalized species distribution for " + str(pltSteps) + " iterations of " + str(tSteps) + " steps")
+    plt.legend()
     
 #%% ---------- Testing offcenter distributions
 
-# --- For a window centered in the vial ---
-species = np.zeros_like(xCoords)
-window = 2*.2
-speciesWindow = species.copy() + 1
-windowMask = np.abs(xCoords) - window/2 < 0
-speciesWindow = speciesWindow*windowMask
-speciesWindow = np.roll(speciesWindow, 100)
-species = speciesWindow
-I = species.copy()
-plt.figure(11)
-plt.plot(xCoords, species, label = 'prediff')
-species = dF.diffusion1D(species, D, T, fxCoords, xCoords)
-plt.figure(11)
-plt.plot(xCoords, species, label = 'posdiff')
-plt.title("species distribution")
-plt.legend()
-species = dF.reaction1D(species, I, .1, xCoords)
-plt.figure(11)
-plt.plot(xCoords, species, label = 'postrxn')
-plt.title("species distribution")
-plt.legend()
+
+
+# # --- for a window centered in the vial ---
+# species = np.zeros_like(xCoords)
+# window = 2*.2
+# specieswindow = species.copy() + 1
+# windowmask = np.abs(xCoords) - window/2 < 0
+# specieswindow = specieswindow*windowmask
+# specieswindow = np.roll(specieswindow, -100)
+# species = specieswindow
+# i = species.copy()
+# plt.figure(11)
+# plt.plot(xCoords, species, label = 'prediff')
+# species = dF.diffusion1D(species, D, T, fxCoords, xCoords)
+# plt.figure(11)
+# plt.plot(xCoords, species, label = 'posdiff')
+# plt.title("species distribution")
+# plt.legend()
+# species = dF.reaction1D(species, I, .1, xCoords)
+# plt.figure(11)
+# plt.plot(xCoords, species, label = 'postrxn')
+# plt.title("species distribution")
+# plt.legend()
+# species = dF.diffusion1D(species, D, T*2, fxCoords, xCoords)
+# plt.figure(11)
+# plt.plot(xCoords, species, label = 'posdiff')
+# plt.title("species distribution")
+# plt.legend()
+# species = dF.reaction1D(species, I, .1, xCoords)
+# plt.figure(11)
+# plt.plot(xCoords, species, label = 'postrxn')
+# plt.title("species distribution")
+# plt.legend()
+# species = dF.diffusion1D(species, D, T*3, fxCoords, xCoords)
+# plt.figure(11)
+# plt.plot(xCoords, species, label = 'posdiff')
+# plt.title("species distribution")
+# plt.legend()
+# species = dF.reaction1D(species, I, .1, xCoords)
+# plt.figure(11)
+# plt.plot(xCoords, species, label = 'postrxn')
+# plt.title("species distribution")
+# plt.legend()
