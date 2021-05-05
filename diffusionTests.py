@@ -17,12 +17,16 @@ import warnings
 #from matplotlib.ticker import LinearLocator
 
 warnings.filterwarnings('ignore')
+
+
+"""
+This file is just to test the functions in diffFxns.py
+These are all "code - to - code" tests, but qualitatively it is easy to see the 
+way that diffusion progresses.
+"""
 #%% ---------- Define constants and coordinates ----------
-twoDflag = 0
 X = 1 # In ums
-Nx = 10000 # Number of x steps. Somewhat arbitrary. Choosing so spacing is about 1 µm
-Y = 10 # In ums
-Ny = 10000 # Number of y steps. Somewhat arbitrary. Choosing so spacing is about 1 µm
+Nx = 10000 # Number of x steps. Somewhat arbitrary.
 D = .01 # In µm/s (for 1D)
 T = .01 # Diffusion time in seconds
 pltSteps = 15 # Number of plots 
@@ -36,11 +40,12 @@ xCoords = np.arange(0, X/dx+dx)
 xCoords = xCoords/xCoords[-1]
 xCoords = xCoords - xCoords[-1]/2
 xCoords = xCoords*X
-dy = Y/Ny # size of each step in ums
-yCoords = np.arange(-Y/2, Y/2, dy)
-yCoords = np.arange(0, Y/dy+dy)
-yCoords = yCoords - yCoords[-1]/2
-yCoords = yCoords*Y
+"""
+ ~~~~~ This section doesn't matter right now becuase I couldn't get the 
+ ~~~~~ transfer function diffusion approach to behave properly. However,
+ ~~~~~ I'm not deleting it because I will be expanding on this code in the future
+ ~~~~~ and I don't want to rewrite anything
+ 
 # Center of xCoords is xCoords[int(len(xCoords)/2-.5)]
 fxCoords = np.arange(0, X/dx+dx) # 
 fxCoords = fxCoords/fxCoords[-1] # normalize
@@ -48,57 +53,70 @@ fxCoords = (fxCoords - fxCoords[-1]/2)*len(fxCoords) # Shift everything and scal
 fyCoords = np.arange(0, Y/dy+dy) # 
 fyCoords = fyCoords/fyCoords[-1] # normalize
 fyCoords = (fyCoords - fyCoords[-1]/2)*len(fyCoords) # Shift everything and scale
+"""
 
-
+#%% Create species distributions for testing
 # ----- Define the species/intensity details -----
 species1D = np.zeros_like(xCoords)
-if twoDflag:
-    species2D = np.zeros((len(xCoords), len(yCoords)))
+
 
 
 # --- For an impulse centered at f = 0 ---
 speciesImpulse1D = species1D.copy()
 speciesImpulse1D[int(len(species1D)/2-.5)] = 1
-
-if twoDflag:
-    speciesImpulse2D = species2D.copy()
-    xlen, ylen = speciesImpulse2D.shape
-    speciesImpulse2D[int(xlen/2-.5)][int(ylen/2-.5)] = 1
-
+speciesImpulseShifted1D = np.roll(speciesImpulse1D, -1000)
 
 
 # --- For a window centered in the vial ---
+# Just creating a mask of width window1D for a top hat function 
 window1D = 2*.1
 speciesWindow1D = species1D.copy() + 1
 windowMask1D = np.abs(xCoords) - window1D/2 < 0
 speciesWindow1D = speciesWindow1D*windowMask1D
-#speciesWindow1D = np.roll(speciesWindow1D, -1)
-species1D = speciesWindow1D
-
-if twoDflag:
-    fxCoords2D, fyCoords2D = np.meshgrid(fxCoords, fyCoords)
-    fSquared = (fxCoords2D**2 + fyCoords2D**2)
-    window2D = 2*.1
-    speciesWindow2D = species2D.copy() + 1
-    windowMask2D = np.abs(fSquared) - window2D/2 < 0
-    speciesWindow2D = np.multiply(speciesWindow2D, windowMask2D)
-    species2D = speciesWindow2D
+speciesWindowShifted1D = np.roll(speciesWindow1D, -1000) # shifting to make sure
+    # my code doesn't have any symmetry dependencies
 
 # --- Two windows centered around middle ---
 
-species1D = np.zeros_like(xCoords)
-window1D = 2*.05
-shift1D = .175
-speciesWindow1D = species1D.copy() + 1
+window1D = 2*.05 # Window width
+shift1D = .175 # Amount to shift by
+speciesDoubleWindow1D = species1D.copy() + 1
+# Just made two masks cause it was easier to debug than one
 twoWindowMask01D = np.abs(xCoords) - (window1D/2 + shift1D) < 0
 twoWindowMask11D = np.abs(xCoords) > shift1D
 twoWindowMask1D = np.logical_and(twoWindowMask01D, twoWindowMask11D)
-speciesWindow1D = speciesWindow1D*twoWindowMask1D
-#speciesWindow1D = np.roll(speciesWindow1D, -1)
-species1D = speciesWindow1D
+speciesTwoWindow1D = speciesDoubleWindow1D*twoWindowMask1D
+speciesTwoWindowShifted1D = np.roll(speciesTwoWindow1D, -500)
+#species1D = speciesWindow1D
 
-plt.plot(xCoords, species1D)
+plt.figure(1)
+fig, axs = plt.subplots(1, 2, sharex='col', sharey='row')
+axs[0].plot(xCoords, speciesImpulse1D, label = "Impulse on center")
+axs[0].set_title('impulse on center')
+axs[1].plot(xCoords, speciesImpulseShifted1D, label = "Shifted impulse")
+axs[1].set_title('shifted impulse')
+
+plt.figure(2)
+fig, axs = plt.subplots(1, 2, sharex='col', sharey='row')
+axs[0].plot(xCoords, speciesWindow1D, label = "Window on center")
+axs[0].set_title('Window on center')
+axs[1].plot(xCoords, speciesWindowShifted1D, label = "Shifted window")
+axs[1].set_title('Shifted window')
+
+plt.figure(3)
+fig, axs = plt.subplots(1, 2, sharex='col', sharey='row')
+axs[0].plot(xCoords, speciesTwoWindow1D, label = "Double window on center")
+axs[0].set_title('Double window on center')
+axs[1].plot(xCoords, speciesTwoWindowShifted1D, label = "Shifted window")
+axs[1].set_title('Shifted double window')
+#plt.plot(xCoords, speciesWindow1D, label="Top hat function on center")
+#plt.plot(xCoords, speciesWindowShifted1D, label="Shifted top hat function")
+
 #%% ---------- Test Surface Plots ----------
+"""
+Started using the following when moving to 2D, but with the transfer function
+approach not working, 2D has to wait
+"""
 # specs2D = np.zeros_like(speciesImpulse2D)
 
 
@@ -120,9 +138,22 @@ plt.plot(xCoords, species1D)
 
 
 #%% ---------- Test fourier transforms ----------
-
+"""
+Used the following to verify FFTs and IFFs were working properly. Not as 
+important now that the transfer function approach is failing
+"""
 fourierTestFlag = 0
 if fourierTestFlag:
+    Y = 1 # In ums
+    Ny = 10000 # Number of y steps. Somewhat arbitrary. 
+    dy = Y/Ny
+    
+    fxCoords = np.arange(0, X/dx+dx) # 
+    fxCoords = fxCoords/fxCoords[-1] # normalize
+    fxCoords = (fxCoords - fxCoords[-1]/2)*len(fxCoords) # Shift everything and scale
+    fyCoords = np.arange(0, Y/dy+dy) # 
+    fyCoords = fyCoords/fyCoords[-1] # normalize
+    fyCoords = (fyCoords - fyCoords[-1]/2)*len(fyCoords) # Shift everything and scale
     # ----- Test cosine -> impulse transforms
     f1 = 20
     f2 = 100
@@ -185,31 +216,80 @@ if fourierTestFlag:
     plt.axis((-10, 10, y1, y2))
     plt.legend()
     
-#%% ---------- Test diffFxns.py ---------
-dF.prnt("test")
-I = species1D.copy()
+#%% ---------- Test diffusion ----------
 
-plt.figure(21)
-#species1D = np.roll(species1D, -500)
-plt.plot(xCoords, species1D/max(species1D), label = 'Normed species at t = 0')
-plt.title("Normed species at t = 0")
-Tstep = T/(pltSteps)
+T = .01 # Total sim time
 
-for i in range(1, pltSteps + 1):
-    print("i = ", i)
-    species1D = dF.timeSim1D(species1D, I, D, Tstep*(i-1), Tstep*i, tSteps, xCoords, fxCoords)
-    #plt.figure()
-    #plt.plot(xCoords, np.abs(species1D), label = 'Species at t = ' + str(i*Tstep) + "\nmax = " + str(max(species1D)))
-    plt.plot(xCoords, np.abs(species1D), label = 'Species at t = ' + str(i*Tstep))
-    #plt.plot(xCoords, (np.abs(species1D)- min(species1D))/(max(species1D) - min(species1D)), label = 'Rescaled species with range ' + str(max(species1D) - min(species1D)))
-    plt.title("Species distribution for " + str(pltSteps) + " iterations of " + str(tSteps) + " steps", y = 1.08)
-    x1, x2, y1, y2 = plt.axis()
-    plt.legend(loc=2, prop={'size': 6})
-    #plt.axis((x1, x2, 0, max(species1D) + .01))
-    #plt.legend()
+# ----- First, impulse diffusion
+plt.figure(4)
+speciesImpulse1D_diff = np.zeros_like(speciesImpulse1D)
+fig, axs = plt.subplots(1, 2, sharex='col', sharey='row')
+axs[0].plot(xCoords, speciesImpulse1D, label = "Impulse on center")
+axs[0].set_title('impulse on center')
+speciesImpulse1D_diff, _ = dF.diffusion1DPDE(speciesImpulse1D, D, T, xCoords)
+axs[0].plot(xCoords, speciesImpulse1D_diff/max(speciesImpulse1D_diff), label='T = ' + str(T))
+x1, x2, y1, y2 = axs[0].axis()
+axs[0].axis((x1, x2, 0, y2+0.1))
+axs[0].legend()
+axs[0].legend(loc=2, prop={'size': 6})
+
+speciesImpulseShifted1D_diff = np.zeros_like(speciesImpulse1D)
+speciesImpulseShifted1D_diff, _ = dF.diffusion1DPDE(speciesImpulseShifted1D, D, T, xCoords)
+axs[1].plot(xCoords, speciesImpulseShifted1D/max(speciesImpulseShifted1D), label = "Shifted impulse")
+axs[1].set_title('shifted impulse')
+axs[1].plot(xCoords, speciesImpulseShifted1D_diff/max(speciesImpulseShifted1D_diff), label = "Shifted impulse")
+x1, x2, y1, y2 = axs[1].axis()
+axs[1].axis((x1, x2, 0, y2+0.1))
+axs[1].legend()
+axs[1].legend(loc=2, prop={'size': 6})
+
+
+plt.figure(5)
+speciesWindow1D_diff = np.zeros_like(speciesWindow1D)
+speciesWindowShifted1D_diff = np.zeros_like(speciesWindowShifted1D)
+speciesWindow1D_diff, _ = dF.diffusion1DPDE(speciesWindow1D, D, T, xCoords)
+speciesWindowShifted1D_diff, _ = dF.diffusion1DPDE(speciesWindowShifted1D, D, T, xCoords)
+
+fig, axs = plt.subplots(1, 2, sharex='col', sharey='row')
+axs[0].plot(xCoords, speciesWindow1D, label = "Window on center")
+
+axs[0].plot(xCoords, speciesWindow1D_diff, label = "Dual window on center")
+
+axs[0].set_title('Window on center')
+axs[0].legend()
+axs[0].legend(loc=2, prop={'size': 6})
+
+axs[1].plot(xCoords, speciesWindowShifted1D, label = "Shifted window")
+axs[1].plot(xCoords, speciesWindowShifted1D_diff, label = "Shifted window")
+axs[1].set_title('Shifted window')
+axs[1].legend()
+axs[1].legend(loc=2, prop={'size': 6})
+
+plt.figure(6)
+speciesTwoWindow1D_diff = np.zeros_like(speciesTwoWindow1D)
+speciesTwoWindowShifted1D_diff = np.zeros_like(speciesTwoWindowShifted1D)
+speciesTwoWindow1D_diff, _ = dF.diffusion1DPDE(speciesTwoWindow1D, D, T, xCoords)
+speciesTwoWindowShifted1D_diff, _ = dF.diffusion1DPDE(speciesTwoWindowShifted1D, D, T, xCoords)
+fig, axs = plt.subplots(1, 2, sharex='col', sharey='row')
+axs[0].plot(xCoords, speciesTwoWindow1D, label = "Double window on center")
+axs[0].plot(xCoords, speciesTwoWindow1D_diff, label = "Double window on center")
+axs[0].set_title('Double window on center')
+axs[0].legend()
+axs[0].legend(loc=2, prop={'size': 6})
+axs[1].plot(xCoords, speciesTwoWindowShifted1D, label = "Shifted window")
+axs[1].plot(xCoords, speciesTwoWindowShifted1D_diff, label = "Shifted window")
+axs[1].set_title('Shifted double window')
+axs[1].legend()
+axs[1].legend(loc=2, prop={'size': 6})
+#plt.plot(xCoords, speciesWindow1D, label="Top hat function on center")
+#plt.plot(xCoords, speciesWindowShifted1D, label="Shifted top hat function")
+
+
     
 #%% ---------- Testing offcenter distributions
-
+"""
+Implemented in a much better way with test diffusion
+"""
 
 
 # # --- for a window centered in the vial ---
@@ -254,59 +334,45 @@ for i in range(1, pltSteps + 1):
 # plt.title("species distribution")
 # plt.legend()
 
-#%% ---------- Testing diffusion
-species1D = np.zeros_like(xCoords)
-
-# --- Two windows centered around middle ---
-
-species1D = np.zeros_like(xCoords)
-window1D = 2*.05
-shift1D = .175
-speciesWindow1D = species1D.copy() + 1
-twoWindowMask01D = np.abs(xCoords) - (window1D/2 + shift1D) < 0
-twoWindowMask11D = np.abs(xCoords) > shift1D
-twoWindowMask1D = np.logical_and(twoWindowMask01D, twoWindowMask11D)
-speciesWindow1D = speciesWindow1D*twoWindowMask1D
-species1D = speciesWindow1D
-plt.figure()
-plt.plot(xCoords, species1D, label = 'Species at t = 0')
+#%% ---------- Testing rxn
+"""
+Only testing one thing becuase with no diffusion, as t->inf, the radical 
+distribution approaches k_I/k_t * I. These constants are experimentally found
+and I set them arbitrarily. I set the ratio to be fairly small. Just going to show
+rxn for an arbitrary amount of time
+"""
 T = .01
-Nstep1 = 1
-Nstep2 = 100
+plt.figure(7)
+speciesTwoWindow1D_rxn = np.zeros_like(speciesTwoWindow1D)
+I = speciesTwoWindow1D
+speciesTwoWindow1D_rxn = dF.reaction1D(speciesTwoWindow1D, I, T, xCoords)
+plt.plot(xCoords, speciesTwoWindow1D, label = 'Double window on center')
+plt.plot(xCoords, speciesTwoWindow1D_rxn, label = 'Double window rxn')
+plt.title("Double window on center")
+plt.label()
 
-dT1 = T/Nstep1
-dT2 = T/Nstep2
-for i in range(1, Nstep1+1):
-    species1D, _ = dF.diffusion1DPDE(species1D, D, dT1*i, xCoords)
-    if i:
-        print("i = ", i)
-        plt.plot(xCoords, species1D, label='i = ' + str(i))
-        
-plt.title("Nstep1 = " + str(Nstep1))
-x1, x2, y1, y2 = plt.axis()
-plt.axis((.1, .3, 0, 1.1))
-plt.legend()
+#%% ---------- Testing timeSim1d
+"""
+Have 10 mins to submit. Only going to show for centered double window
+"""
+T = 0.01
+plt.figure(8)
+plt.plot(xCoords, speciesTwoWindow1D, label = 'Species at t = 0')
+#plt.title("Normed species at t = 0")
+pltSteps = 5
+Tstep = T/(pltSteps)
+speciesTwoWindow1DFull = speciesTwoWindow1D.copy()
 
+for i in range(1, pltSteps + 1):
+    #print("i = ", i)
+    speciesTwoWindow1DFull = dF.timeSim1D(speciesTwoWindow1DFull, I, D, Tstep*(i-1), Tstep*i, tSteps, xCoords, xCoords)
+    #plt.figure()
+    #plt.plot(xCoords, np.abs(species1D), label = 'Species at t = ' + str(i*Tstep) + "\nmax = " + str(max(species1D)))
+    plt.plot(xCoords, speciesTwoWindow1DFull, label = 'Species at t = ' + str(i*Tstep))
+    #plt.plot(xCoords, (np.abs(species1D)- min(species1D))/(max(species1D) - min(species1D)), label = 'Rescaled species with range ' + str(max(species1D) - min(species1D)))
+    plt.title("Species distribution for " + str(pltSteps) + " iterations of " + str(tSteps) + " steps", y = 1.08)
+    x1, x2, y1, y2 = plt.axis()
+    plt.legend(loc=2, prop={'size': 6})
+    #plt.axis((x1, x2, 0, max(species1D) + .01))
+    #plt.legend()
 
-species1D = np.zeros_like(xCoords)
-window1D = 2*.05
-shift1D = .175
-speciesWindow1D = species1D.copy() + 1
-twoWindowMask01D = np.abs(xCoords) - (window1D/2 + shift1D) < 0
-twoWindowMask11D = np.abs(xCoords) > shift1D
-twoWindowMask1D = np.logical_and(twoWindowMask01D, twoWindowMask11D)
-speciesWindow1D = speciesWindow1D*twoWindowMask1D
-species1D = speciesWindow1D
-plt.figure()
-plt.plot(xCoords, species1D, label = 'Species at t = 0')
-
-for i in range(1, Nstep2+1):
-    species1D, _ = dF.diffusion1DPDE(species1D, D, dT2*i, xCoords)
-    if i % 10 == 0:
-        print("i = ", i)
-        plt.plot(xCoords, species1D, label='i = ' + str(i))
-        
-plt.title("Nstep2 = " + str(Nstep2))
-x1, x2, y1, y2 = plt.axis()
-plt.axis((.1, .3, .4, 1.1))
-plt.legend()

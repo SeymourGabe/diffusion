@@ -9,6 +9,7 @@ Created on Mon May  3 22:02:02 2021
 import numpy as np
 import matplotlib.pyplot as plt
 
+#%% diffusion1DTransferFxn(species, D, T, fCoords, xCoords)
 
 def diffusion1DTransferFxn(species, D, T, fCoords, xCoords):
     #print("diffusion1D")
@@ -93,7 +94,8 @@ def diffusion1DTransferFxn(species, D, T, fCoords, xCoords):
         
     return speciesDiff
 
-#%%
+#%% diffusion1DPDE(species, D, T, xCoords)
+
 def diffusion1DPDE(species, D, T, xCoords):
     """
     Well, I'm not having luck implementing the transfer function diffusion fxn. 
@@ -172,6 +174,7 @@ def diffusion1DPDE(species, D, T, xCoords):
     
     return species, dt
 
+""" Test nonsense
 # X = 1
 # Nx = 10000
 # D = 10
@@ -211,8 +214,9 @@ def diffusion1DPDE(species, D, T, xCoords):
         
 # plt.title("T = " + str(T) + "\n∆t = " + str(deltaT), y = 1.1)
 # plt.axis((0, .2, 0, 1.1))
-# plt.legend()
-#%%
+# plt.legend() 
+"""
+#%% reaction1D(species, I, dt, xCoords):
 
 def reaction1D(species, I, dt, xCoords):
     pltSpeciesFlg = 0
@@ -267,6 +271,7 @@ def reaction1D(species, I, dt, xCoords):
     
     return speciesRxn
 
+#%% timeSim1D(species, I, D, T0, T, steps, xCoords, fCoords)
 def timeSim1D(species, I, D, T0, T, steps, xCoords, fCoords):
     print("in timeStim1D")
     """
